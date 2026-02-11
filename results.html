@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نتيجة الطالب - المعهد العالي للسياحة والفنادق</title>
+    <style>
+        :root {
+            --primary: #0b3d91;
+            --accent: #f29900;
+            --bg: #eef2f7;
+            --white: #ffffff;
+        }
+
+        body { 
+            margin: 0; 
+            font-family: 'Segoe UI', Tahoma, sans-serif; 
+            background: var(--bg); 
+            color: #333; 
+        }
+
+        .top-header {
+            background: var(--white);
+            padding: 10px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .top-header img { height: 70px; }
+        .header-title { color: var(--primary); font-weight: bold; font-size: 1.2rem; }
+
+        .hero-banner {
+            background: linear-gradient(rgba(11, 61, 145, 0.6), rgba(11, 61, 145, 0.6)), 
+                        url('https://hith.edu.eg/wp-content/uploads/2021/05/albatros-aqua-park.jpg');
+            background-size: cover;
+            background-position: center;
+            height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+        }
+
+        .hero-banner h1 { margin: 0; font-size: 1.8rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+
+        .container {
+            max-width: 1000px;
+            margin: -40px auto 40px;
+            padding: 0 15px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .student-card {
+            background: var(--white);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            border-right: 10px solid var(--accent);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .info-box { text-align: center; padding: 10px; border-left: 1px solid #eee; }
+        .info-box:last-child { border-left: none; }
+        .info-box label { display: block; color: #888; font-size: 0.85rem; margin-bottom: 8px; }
+        .info-box span { font-weight: 900; color: var(--primary); font-size: 1.1rem; }
+
+        .results-section {
+            background: var(--white);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { background: var(--primary); color: white; padding: 18px; font-size: 1.1rem; text-align: right; }
+        td { padding: 15px; border-bottom: 1px solid #f0f0f0; text-align: right; font-weight: 600; }
+        
+        .grade-pill {
+            display: inline-block;
+            padding: 6px 20px;
+            border-radius: 25px;
+            font-weight: 900;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .grade-m { background: #e8f5e9; color: #1b5e20; border: 1px solid #1b5e20; } /* ممتاز */
+        .grade-v { background: #e3f2fd; color: #0d47a1; border: 1px solid #0d47a1; } /* جيد جدا */
+        .grade-g { background: #fff3e0; color: #e65100; border: 1px solid #e65100; } /* جيد */
+        .grade-p { background: #f1f8e9; color: #33691e; border: 1px solid #33691e; } /* مقبول */
+        .grade-f { background: #ffebee; color: #b71c1c; border: 1px solid #b71c1c; } /* ل / ض */
+        .grade-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #2e7d32; } /* ناجح */
+
+        .backlog-card {
+            margin-top: 25px;
+            background: #fffdf2;
+            border: 2px dashed var(--accent);
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .student-card { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="top-header">
+    <div class="header-title">نظام استخراج النتائج الإلكتروني</div>
+    <img src="logo.jpg" alt="لوجو المعهد">
+</div>
+
+<div class="hero-banner">
+    <h1>المعهد العالي للسياحة والفنادق بالغردقة</h1>
+    <p>بيان درجات الطالب للعام الأكاديمي 2025-2026</p>
+</div>
+
+<div class="container">
+    <div class="student-card">
+        <div class="info-box">
+            <label>الاسم بالكامل</label>
+            <span id="st-name">جاري التحميل...</span>
+        </div>
+        <div class="info-box">
+            <label>رقم الجلوس</label>
+            <span id="st-id">---</span>
+        </div>
+        <div class="info-box">
+            <label>الفرقة</label>
+            <span id="st-level">---</span>
+        </div>
+        <div class="info-box">
+            <label>الشعبة</label>
+            <span id="st-dept">---</span>
+        </div>
+    </div>
+
+    <div class="results-section">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 70%;">اسم المقرر الدراسي</th>
+                    <th style="text-align: center;">التقدير</th>
+                </tr>
+            </thead>
+            <tbody id="grades-body"></tbody>
+        </table>
+    </div>
+
+    <div id="backlog-area" class="backlog-card" style="display: none;">
+        <div style="font-weight: bold; color: #856404; margin-bottom: 10px;">📝 مواد التخلف</div>
+        <div id="backlog-list" style="line-height: 2;"></div>
+    </div>
+
+    <div style="margin-top: 40px; text-align: center; color: #777; padding-bottom: 40px;">
+        <p style="font-size: 0.85rem; border-top: 1px solid #ddd; padding-top: 20px;">
+            * تعتمد هذه النتيجة بعد المراجعة النهائية من شؤون الطلاب بالمعهد.
+        </p>
+    </div>
+</div>
+
+<script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbyyo27m0mnubUrD_MSjxi4i_TqnrJuGzDXOsdb7MmeqO0bXWr7CGWurXxhpP7e9Bm_S/exec";
+    const student = JSON.parse(localStorage.getItem("studentData"));
+
+    async function fetchResult() {
+        if (!student) { window.location.href = "index.html"; return; }
+        try {
+            const response = await fetch(API_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "getStudentResult", code: student.code })
+            });
+            const res = await response.json();
+            
+            if (res.status === "success") {
+                const d = res.data;
+                
+                document.getElementById('st-name').innerText = d["الاســــــــــــــم"] || "---";
+                document.getElementById('st-id').innerText = d["رقم الجلوس"] || "---";
+                document.getElementById('st-level').innerText = d["الفرقة"] || "---";
+                document.getElementById('st-dept').innerText = d["الشعبة"] || "---";
+
+                const tbody = document.getElementById('grades-body');
+                tbody.innerHTML = "";
+                
+                // استخراج المواد والتقديرات (الأسماء البرمجية للأعمدة المكررة في Apps Script)
+                const subjects = [
+                    { n: d["المادة"], g: d["التقدير"] },
+                    { n: d["المادة_1"], g: d["التقدير_1"] },
+                    { n: d["المادة_2"], g: d["التقدير_2"] },
+                    { n: d["المادة_3"], g: d["التقدير_3"] },
+                    { n: d["المادة_4"], g: d["التقدير_4"] }
+                ];
+
+                subjects.forEach(sub => {
+                    if (sub.n && sub.n.toString().trim() !== "") {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${sub.n}</td>
+                                <td style="text-align: center;">
+                                    <span class="grade-pill ${getGradeClass(sub.g)}">${sub.g || '---'}</span>
+                                </td>
+                            </tr>`;
+                    }
+                });
+                
+                const bArea = document.getElementById('backlog-area');
+                let bHtml = "";
+                if (d["مادة التخلف 1"] && d["مادة التخلف 1"].trim() !== "") {
+                    bHtml += `<div>• ${d["مادة التخلف 1"]} (تقدير: ${d["التقدير 1"] || '---'})</div>`;
+                }
+                
+                const m2 = d["مادة التخلف 1_1"];
+                const g2 = d["التقدير 2"];
+                if (m2 && m2.trim() !== "") {
+                    bHtml += `<div>• ${m2} (تقدير: ${g2 || '---'})</div>`;
+                }
+
+                if (bHtml !== "") { 
+                    document.getElementById('backlog-list').innerHTML = bHtml; 
+                    bArea.style.display = "block"; 
+                }
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    function getGradeClass(grade) {
+        if (!grade) return "";
+        const g = grade.toString().trim();
+        if (g === 'م') return "grade-m";
+        if (g === 'جـ جـ' || g === 'ج ج') return "grade-v";
+        if (g === 'جـ' || g === 'ج') return "grade-g";
+        if (g === 'ل' || g === 'ض') return "grade-f";
+        if (g === 'ناجح') return "grade-success";
+        return "grade-p"; // افتراضي مقبول
+    }
+    window.onload = fetchResult;
+</script>
+</body>
+</html>
