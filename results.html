@@ -12,12 +12,30 @@
             --white: #ffffff;
         }
 
-        body { 
-            margin: 0; 
-            font-family: 'Segoe UI', Tahoma, sans-serif; 
-            background: var(--bg); 
-            color: #333; 
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: var(--bg);
+            color: #333;
+            user-select: none;
+            -webkit-user-select: none;
         }
+
+        #devtools-warning {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.96);
+            color: #fff;
+            z-index: 99999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+        }
+        #devtools-warning h2 { font-size: 2rem; color: #ff4444; margin-bottom: 15px; }
+        #devtools-warning p  { font-size: 1rem; opacity: .85; max-width: 400px; line-height: 1.8; }
 
         .top-header {
             background: var(--white);
@@ -27,12 +45,11 @@
             align-items: center;
             border-bottom: 3px solid var(--primary);
         }
-
         .top-header img { height: 70px; }
         .header-title { color: var(--primary); font-weight: bold; font-size: 1.2rem; }
 
         .hero-banner {
-            background: linear-gradient(rgba(11, 61, 145, 0.6), rgba(11, 61, 145, 0.6)), 
+            background: linear-gradient(rgba(11,61,145,0.6), rgba(11,61,145,0.6)),
                         url('https://hith.edu.eg/wp-content/uploads/2021/05/albatros-aqua-park.jpg');
             background-size: cover;
             background-position: center;
@@ -44,7 +61,6 @@
             color: white;
             text-align: center;
         }
-
         .hero-banner h1 { margin: 0; font-size: 1.8rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
 
         .container {
@@ -82,7 +98,7 @@
         table { width: 100%; border-collapse: collapse; }
         th { background: var(--primary); color: white; padding: 18px; font-size: 1.1rem; text-align: right; }
         td { padding: 15px; border-bottom: 1px solid #f0f0f0; text-align: right; font-weight: 600; }
-        
+
         .grade-pill {
             display: inline-block;
             padding: 6px 20px;
@@ -91,13 +107,12 @@
             min-width: 60px;
             text-align: center;
         }
-        
-        .grade-m { background: #e8f5e9; color: #1b5e20; border: 1px solid #1b5e20; } /* ممتاز */
-        .grade-v { background: #e3f2fd; color: #0d47a1; border: 1px solid #0d47a1; } /* جيد جدا */
-        .grade-g { background: #fff3e0; color: #e65100; border: 1px solid #e65100; } /* جيد */
-        .grade-p { background: #f1f8e9; color: #33691e; border: 1px solid #33691e; } /* مقبول */
-        .grade-f { background: #ffebee; color: #b71c1c; border: 1px solid #b71c1c; } /* ل / ض */
-        .grade-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #2e7d32; } /* ناجح */
+        .grade-m       { background: #e8f5e9; color: #1b5e20; border: 1px solid #1b5e20; }
+        .grade-v       { background: #e3f2fd; color: #0d47a1; border: 1px solid #0d47a1; }
+        .grade-g       { background: #fff3e0; color: #e65100; border: 1px solid #e65100; }
+        .grade-p       { background: #f1f8e9; color: #33691e; border: 1px solid #33691e; }
+        .grade-f       { background: #ffebee; color: #b71c1c; border: 1px solid #b71c1c; }
+        .grade-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #2e7d32; }
 
         .backlog-card {
             margin-top: 25px;
@@ -113,6 +128,13 @@
     </style>
 </head>
 <body>
+
+<div id="devtools-warning">
+    <h2>⛔ تحذير أمني</h2>
+    <p>تم رصد محاولة فتح أدوات المطور.<br>
+    هذا الإجراء مخالف لسياسة المعهد.<br>
+    يرجى إغلاق هذه الأدوات والمحاولة مجدداً.</p>
+</div>
 
 <div class="top-header">
     <div class="header-title">نظام استخراج النتائج الإلكتروني</div>
@@ -169,81 +191,142 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyyo27m0mnubUrD_MSjxi4i_TqnrJuGzDXOsdb7MmeqO0bXWr7CGWurXxhpP7e9Bm_S/exec";
-    const student = JSON.parse(localStorage.getItem("studentData"));
 
-    async function fetchResult() {
-        if (!student) { window.location.href = "index.html"; return; }
-        try {
-            const response = await fetch(API_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: "getStudentResult", code: student.code })
+
+(function() {
+    document.addEventListener("keydown", function(e) {
+        if (
+            e.key === "F12" ||
+            (e.ctrlKey && e.shiftKey && ["I","J","C"].includes(e.key)) ||
+            (e.ctrlKey && e.key === "U") ||
+            (e.ctrlKey && e.key === "S")
+        ) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+    });
+
+    document.addEventListener("contextmenu", e => e.preventDefault());
+    document.addEventListener("copy",  e => e.preventDefault());
+    document.addEventListener("cut",   e => e.preventDefault());
+
+    const threshold = 160;
+    function checkDevTools() {
+        const wDiff = window.outerWidth  - window.innerWidth;
+        const hDiff = window.outerHeight - window.innerHeight;
+        const warn  = document.getElementById("devtools-warning");
+        if (wDiff > threshold || hDiff > threshold) {
+            warn.style.display = "flex";
+            document.body.style.overflow = "hidden";
+        } else {
+            warn.style.display = "none";
+            document.body.style.overflow = "";
+        }
+    }
+    setInterval(checkDevTools, 1000);
+    window.addEventListener("resize", checkDevTools);
+})();
+
+
+const API_URL = "https://script.google.com/macros/s/AKfycbzxBt3ld2TMP3nLyK9EeeIkyY-gmrMsvlPuXG-ATYmQRpHVVRcB_Elgbgq2e87DJfgjPA/exec";
+
+const student = JSON.parse(localStorage.getItem("studentData"));
+const token   = localStorage.getItem("token");
+const ua      = localStorage.getItem("ua");
+
+
+if (!student || !token || !ua) {
+    location.href = "index.html";
+    throw new Error("stop");
+}
+
+async function fetchResult() {
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "getStudentResult",
+                code:   student.code,
+                token:  token,
+                ua:     ua
+            })
+        });
+
+        const res = await response.json();
+
+
+        if (res.status === "unauthorized") {
+            alert("⛔ " + (res.msg || "انتهت الجلسة أو تم الدخول من جهاز آخر"));
+            localStorage.clear();
+            location.href = "index.html";
+            return;
+        }
+
+        if (res.status === "success") {
+            const d = res.data;
+
+            document.getElementById('st-name').innerText  = d["الاســــــــــــــم"] || "---";
+            document.getElementById('st-id').innerText    = d["رقم الجلوس"]          || "---";
+            document.getElementById('st-level').innerText = d["الفرقة"]              || "---";
+            document.getElementById('st-dept').innerText  = d["الشعبة"]              || "---";
+
+            const tbody = document.getElementById('grades-body');
+            tbody.innerHTML = "";
+
+            const subjects = [
+                { n: d["المادة"],   g: d["التقدير"]   },
+                { n: d["المادة_1"], g: d["التقدير_1"] },
+                { n: d["المادة_2"], g: d["التقدير_2"] },
+                { n: d["المادة_3"], g: d["التقدير_3"] },
+                { n: d["المادة_4"], g: d["التقدير_4"] }
+            ];
+
+            subjects.forEach(sub => {
+                if (sub.n && sub.n.toString().trim() !== "") {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${sub.n}</td>
+                            <td style="text-align:center">
+                                <span class="grade-pill ${getGradeClass(sub.g)}">${sub.g || '---'}</span>
+                            </td>
+                        </tr>`;
+                }
             });
-            const res = await response.json();
-            
-            if (res.status === "success") {
-                const d = res.data;
-                
-                document.getElementById('st-name').innerText = d["الاســــــــــــــم"] || "---";
-                document.getElementById('st-id').innerText = d["رقم الجلوس"] || "---";
-                document.getElementById('st-level').innerText = d["الفرقة"] || "---";
-                document.getElementById('st-dept').innerText = d["الشعبة"] || "---";
 
-                const tbody = document.getElementById('grades-body');
-                tbody.innerHTML = "";
-                
-                // استخراج المواد والتقديرات (الأسماء البرمجية للأعمدة المكررة في Apps Script)
-                const subjects = [
-                    { n: d["المادة"], g: d["التقدير"] },
-                    { n: d["المادة_1"], g: d["التقدير_1"] },
-                    { n: d["المادة_2"], g: d["التقدير_2"] },
-                    { n: d["المادة_3"], g: d["التقدير_3"] },
-                    { n: d["المادة_4"], g: d["التقدير_4"] }
-                ];
-
-                subjects.forEach(sub => {
-                    if (sub.n && sub.n.toString().trim() !== "") {
-                        tbody.innerHTML += `
-                            <tr>
-                                <td>${sub.n}</td>
-                                <td style="text-align: center;">
-                                    <span class="grade-pill ${getGradeClass(sub.g)}">${sub.g || '---'}</span>
-                                </td>
-                            </tr>`;
-                    }
-                });
-                
-                const bArea = document.getElementById('backlog-area');
-                let bHtml = "";
-                if (d["مادة التخلف 1"] && d["مادة التخلف 1"].trim() !== "") {
-                    bHtml += `<div>• ${d["مادة التخلف 1"]} (تقدير: ${d["التقدير 1"] || '---'})</div>`;
-                }
-                
-                const m2 = d["مادة التخلف 1_1"];
-                const g2 = d["التقدير 2"];
-                if (m2 && m2.trim() !== "") {
-                    bHtml += `<div>• ${m2} (تقدير: ${g2 || '---'})</div>`;
-                }
-
-                if (bHtml !== "") { 
-                    document.getElementById('backlog-list').innerHTML = bHtml; 
-                    bArea.style.display = "block"; 
-                }
+            // التخلفات
+            let bHtml = "";
+            if (d["مادة التخلف 1"] && d["مادة التخلف 1"].trim() !== "") {
+                bHtml += `<div>• ${d["مادة التخلف 1"]} (تقدير: ${d["التقدير 1"] || '---'})</div>`;
             }
-        } catch (e) { console.error(e); }
-    }
+            if (d["مادة التخلف 1_1"] && d["مادة التخلف 1_1"].trim() !== "") {
+                bHtml += `<div>• ${d["مادة التخلف 1_1"]} (تقدير: ${d["التقدير 2"] || '---'})</div>`;
+            }
+            if (bHtml !== "") {
+                document.getElementById('backlog-list').innerHTML = bHtml;
+                document.getElementById('backlog-area').style.display = "block";
+            }
+        }
 
-    function getGradeClass(grade) {
-        if (!grade) return "";
-        const g = grade.toString().trim();
-        if (g === 'م') return "grade-m";
-        if (g === 'جـ جـ' || g === 'ج ج') return "grade-v";
-        if (g === 'جـ' || g === 'ج') return "grade-g";
-        if (g === 'ل' || g === 'ض') return "grade-f";
-        if (g === 'ناجح') return "grade-success";
-        return "grade-p"; // افتراضي مقبول
+    } catch (e) {
+        if (e.message !== "stop") console.error(e);
     }
-    window.onload = fetchResult;
+}
+
+
+function getGradeClass(grade) {
+    if (!grade) return "";
+    const g = grade.toString().trim();
+    if (g === 'م')                        return "grade-m";
+    if (g === 'جـ جـ' || g === 'ج ج')   return "grade-v";
+    if (g === 'جـ'    || g === 'ج')      return "grade-g";
+    if (g === 'ل'     || g === 'ض')      return "grade-f";
+    if (g === 'ناجح')                     return "grade-success";
+    return "grade-p";
+}
+
+window.onload = fetchResult;
+
 </script>
 </body>
 </html>
