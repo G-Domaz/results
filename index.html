@@ -18,8 +18,9 @@ body{
     margin:0;
     font-family: "Segoe UI", Tahoma, Arial;
     background:#eef1f4;
+    user-select: none;
+    -webkit-user-select: none;
 }
-
 
 .header{
     background:var(--main);
@@ -30,20 +31,9 @@ body{
     gap:15px;
 }
 
-.header img{
-    height:60px;
-}
-
-.header .title{
-    font-size:20px;
-    font-weight:700;
-}
-
-.header .subtitle{
-    font-size:14px;
-    opacity:.9;
-}
-
+.header img{ height:60px; }
+.header .title{ font-size:20px; font-weight:700; }
+.header .subtitle{ font-size:14px; opacity:.9; }
 
 .main{
     display:flex;
@@ -59,7 +49,6 @@ body{
     border-radius:6px;
 }
 
-
 .box-header{
     background:var(--secondary);
     padding:15px;
@@ -69,14 +58,9 @@ body{
     text-align:center;
 }
 
+.box-content{ padding:25px; }
 
-.box-content{
-    padding:25px;
-}
-
-.form-group{
-    margin-bottom:15px;
-}
+.form-group{ margin-bottom:15px; }
 
 label{
     display:block;
@@ -91,6 +75,7 @@ input{
     border:1px solid var(--border);
     border-radius:4px;
     font-size:14px;
+    box-sizing: border-box;
 }
 
 button{
@@ -104,9 +89,8 @@ button{
     cursor:pointer;
 }
 
-button:hover{
-    opacity:.9;
-}
+button:hover{ opacity:.9; }
+button:disabled{ opacity:.6; cursor:not-allowed; }
 
 .link-btn{
     display:block;
@@ -122,9 +106,11 @@ button:hover{
     text-align:center;
     margin-top:15px;
     font-weight:600;
+    font-size:14px;
+    line-height:1.6;
 }
 
-.hidden{display:none;}
+.hidden{ display:none; }
 
 .info-box{
     background:#eef4ff;
@@ -135,17 +121,50 @@ button:hover{
     font-weight:600;
 }
 
-
 .footer-img img{
     width:100%;
     border-top:1px solid var(--border);
+}
+
+#devtools-warning{
+    display:none;
+    position:fixed;
+    top:0; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,0.95);
+    color:#fff;
+    z-index:99999;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    text-align:center;
+    padding:20px;
+}
+
+#devtools-warning h2{
+    font-size:2rem;
+    color:#ff4444;
+    margin-bottom:15px;
+}
+
+#devtools-warning p{
+    font-size:1rem;
+    opacity:.85;
+    max-width:400px;
+    line-height:1.8;
 }
 </style>
 </head>
 
 <body>
 
+<div id="devtools-warning">
+    <h2>⛔ تحذير أمني</h2>
+    <p>تم رصد محاولة فتح أدوات المطور.<br>
+    هذا الإجراء مخالف لسياسة المعهد.<br>
+    يرجى إغلاق هذه الأدوات والمحاولة مجدداً.</p>
+</div>
 
+<!-- HEADER -->
 <div class="header">
     <img src="logo.jpg" alt="Logo">
     <div>
@@ -154,6 +173,7 @@ button:hover{
     </div>
 </div>
 
+<!-- MAIN -->
 <div class="main">
 <div class="container">
 
@@ -164,25 +184,25 @@ button:hover{
         <div id="loginSection">
             <div class="form-group">
                 <label>الكود الجامعي</label>
-                <input type="text" id="userCode">
+                <input type="text" id="userCode" autocomplete="off" spellcheck="false">
             </div>
 
             <div class="form-group">
                 <label>كلمة المرور أو الرقم القومي</label>
-                <input type="password" id="userPass">
+                <input type="password" id="userPass" autocomplete="off">
             </div>
 
-            <button onclick="handleLogin()">دخول</button>
+            <button id="loginBtn" onclick="handleLogin()">دخول</button>
             <a class="link-btn" onclick="toggleForgot()">نسيت الكود الجامعي؟</a>
         </div>
 
         <div id="forgotSection" class="hidden">
             <div class="form-group" id="nationalIdGroup">
                 <label>الرقم القومي</label>
-                <input type="text" id="nationalIdInput">
+                <input type="text" id="nationalIdInput" autocomplete="off">
             </div>
 
-            <button onclick="retrieveCode()">استعلام</button>
+            <button id="retrieveBtn" onclick="retrieveCode()">استعلام</button>
             <div id="resultBox" class="hidden info-box"></div>
             <a class="link-btn" onclick="toggleForgot()">العودة لتسجيل الدخول</a>
         </div>
@@ -199,56 +219,172 @@ button:hover{
 </div>
 
 <script>
-const API_URL="https://script.google.com/macros/s/AKfycbyyo27m0mnubUrD_MSjxi4i_TqnrJuGzDXOsdb7MmeqO0bXWr7CGWurXxhpP7e9Bm_S/exec";
 
+(function() {
+
+    // 1️⃣ منع F12 و Ctrl+Shift+I و Ctrl+U وغيرها
+    document.addEventListener("keydown", function(e) {
+        if (
+            e.key === "F12" ||
+            (e.ctrlKey && e.shiftKey && ["I","J","C"].includes(e.key)) ||
+            (e.ctrlKey && e.key === "U") ||
+            (e.ctrlKey && e.key === "S")
+        ) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+    });
+
+
+    document.addEventListener("contextmenu", function(e) {
+        e.preventDefault();
+        return false;
+    });
+
+
+    const threshold = 160;
+    function checkDevTools() {
+        const widthDiff  = window.outerWidth  - window.innerWidth;
+        const heightDiff = window.outerHeight - window.innerHeight;
+        const warning = document.getElementById("devtools-warning");
+        if (widthDiff > threshold || heightDiff > threshold) {
+            warning.style.display = "flex";
+            document.body.style.overflow = "hidden";
+        } else {
+            warning.style.display = "none";
+            document.body.style.overflow = "";
+        }
+    }
+    setInterval(checkDevTools, 1000);
+    window.addEventListener("resize", checkDevTools);
+
+
+    document.addEventListener("copy",  e => e.preventDefault());
+    document.addEventListener("cut",   e => e.preventDefault());
+
+})();
+
+
+const API_URL = "https://script.google.com/macros/s/AKfycbzxBt3ld2TMP3nLyK9EeeIkyY-gmrMsvlPuXG-ATYmQRpHVVRcB_Elgbgq2e87DJfgjPA/exec";
+const ua = navigator.userAgent;
 function toggleForgot(){
-    loginSection.classList.toggle("hidden");
-    forgotSection.classList.toggle("hidden");
-    msg.innerText="";
-    resultBox.classList.add("hidden");
-    nationalIdGroup.style.display="block";
+    document.getElementById("loginSection").classList.toggle("hidden");
+    document.getElementById("forgotSection").classList.toggle("hidden");
+    document.getElementById("msg").innerText = "";
+    document.getElementById("resultBox").classList.add("hidden");
+    document.getElementById("nationalIdGroup").style.display = "block";
 }
 
 async function handleLogin(){
-    if(!userCode.value||!userPass.value){
-        showMsg("يرجى إدخال جميع البيانات","error");return;
+
+    const btn = document.getElementById("loginBtn");
+
+
+    if(btn.disabled) return;
+
+    const code = document.getElementById("userCode").value.trim();
+    const pass = document.getElementById("userPass").value.trim();
+
+    if(!code || !pass){
+        showMsg("يرجى إدخال جميع البيانات","error");
+        return;
     }
-    showMsg("جاري التحقق...");
-    try{
-        const r=await fetch(API_URL,{
-            method:"POST",
-            body:JSON.stringify({action:"login",code:userCode.value,password:userPass.value})
-        });
-        const res=await r.json();
-        if(res.status==="success"){
-            showMsg("تم تسجيل الدخول بنجاح","success");
-            localStorage.setItem("studentData",JSON.stringify(res.user));
-            setTimeout(()=>location.href="results.html",1500);
-        }else showMsg(res.msg,"error");
-    }catch{showMsg("خطأ في الاتصال","error");}
-}
 
+    localStorage.clear();
+
+
+    btn.disabled = true;
+    btn.innerText = "جاري تسجيل الدخول...";
+    showMsg("⏳ برجاء الانتظار...", "");
+
+    try{
+        const r = await fetch(API_URL, {
+            method: "POST",
+          
+            body: JSON.stringify({ action:"login", code:code, password:pass, ua:ua })
+        });
+        const res = await r.json();
+
+        if(res.status === "success"){
+            showMsg("تم تسجيل الدخول بنجاح ✅","success");
+
+             setTimeout(()=>{
+             showMsg("جاري تحويلك للنتيجة...", "");
+         }, 1200);
+            // ✅ الحفظ هنا بعد نجاح الدخول
+            localStorage.setItem("studentData", JSON.stringify(res.user));
+            localStorage.setItem("token", res.user.token);
+            localStorage.setItem("ua", ua);
+
+            setTimeout(()=> location.href = "results.html", 2200);
+
+        } else if(res.status === "locked"){
+            showMsg("🔒 " + res.msg, "error");
+            btn.disabled = true;
+            btn.innerText = "الحساب موقوف";
+
+        } else {
+            let msgText = res.msg || "بيانات غير صحيحة";
+            if(res.remainingAttempts !== undefined){
+                msgText += `\nتبقى لك ${res.remainingAttempts} محاولة فقط`;
+            }
+            showMsg(msgText,"error");
+            btn.disabled = false;
+            btn.innerText = "دخول";
+        }
+
+    } catch(err){
+        showMsg("خطأ في الاتصال بالسيرفر","error");
+        btn.disabled = false;
+        btn.innerText = "دخول";
+    }
+}
 async function retrieveCode(){
-    if(!nationalIdInput.value){showMsg("أدخل الرقم القومي","error");return;}
-    showMsg("جاري البحث...");
-    try{
-        const r=await fetch(API_URL,{
-            method:"POST",
-            body:JSON.stringify({action:"getStudentCode",nationalId:nationalIdInput.value})
-        });
-        const res=await r.json();
-        if(res.status==="success"){
-            nationalIdGroup.style.display="none";
-            resultBox.innerHTML="كودك الجامعي:<br>"+res.code;
-            resultBox.classList.remove("hidden");
-            msg.innerText="";
-        }else showMsg(res.msg,"error");
-    }catch{showMsg("خطأ في الاتصال","error");}
-}
+    const nationalId = document.getElementById("nationalIdInput").value.trim();
 
-function showMsg(t,type){
-    msg.innerText=t;
-    msg.style.color= type==="error"?"var(--error)":type==="success"?"var(--success)":"var(--main)";
+    if(!nationalId){
+        showMsg("أدخل الرقم القومي","error");
+        return;
+    }
+
+    const btn = document.getElementById("retrieveBtn");
+    btn.disabled = true;
+    btn.innerText = "جاري البحث...";
+    showMsg("جاري البحث...","");
+
+    try{
+        const r = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({ action:"getStudentCode", nationalId:nationalId })
+        });
+        const res = await r.json();
+
+        if(res.status === "success"){
+            document.getElementById("nationalIdGroup").style.display = "none";
+            const resultBox = document.getElementById("resultBox");
+            resultBox.innerHTML = "كودك الجامعي:<br><strong>" + res.code + "</strong>";
+            resultBox.classList.remove("hidden");
+            showMsg("","");
+        } else {
+            showMsg(res.msg,"error");
+            btn.disabled = false;
+            btn.innerText = "استعلام";
+        }
+
+    } catch(err){
+        showMsg("خطأ في الاتصال بالسيرفر","error");
+        btn.disabled = false;
+        btn.innerText = "استعلام";
+    }
+}
+function showMsg(t, type){
+    const el = document.getElementById("msg");
+    el.innerText = t;
+    el.style.color = type==="error" ? "var(--error)"
+                   : type==="success" ? "var(--success)"
+                   : "var(--main)";
+    el.style.whiteSpace = "pre-line";
 }
 </script>
 
